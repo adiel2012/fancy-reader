@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Voz Alta</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 28 28" fill="currentColor" aria-hidden="true"><rect x="2" y="11" width="3.5" height="6" rx="1.75"/><rect x="8.5" y="5" width="3.5" height="18" rx="1.75"/><rect x="15" y="8" width="3.5" height="12" rx="1.75"/><rect x="21.5" y="12" width="3.5" height="4" rx="1.75"/></svg>
+      Voz Alta
+    </div>
+    <span class="btn filebtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+      Abrir archivo
+    <input type="file" id="file2" class="ovl" aria-label="Abrir archivo PDF, Markdown o texto">
+    </span>
+  </header>
+
+  <label class="drop" id="drop" for="file">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+    <span><b>Suelta aquí un PDF, Markdown o texto, o elige un archivo</b><small>Acepta .pdf, .md y .txt. Se procesa en tu navegador y no se sube a ningún servidor.</small></span>
+    <input type="file" id="file" class="ovl" aria-label="Elegir archivo PDF, Markdown o texto">
+  </label>
+
+  <details class="paste" id="paste">
+    <summary>O pega texto o Markdown aquí</summary>
+    <textarea id="pastetxt" placeholder="Pega aquí el texto que quieres escuchar" aria-label="Texto a leer"></textarea>
+    <div class="row">
+      <button class="btn" id="pastego" type="button">Leer este texto</button>
+      <label><input type="checkbox" id="pastemd" checked> Es Markdown</label>
+    </div>
+  </details>
+
+  <details class="paste" id="diag">
+    <summary>Diagnóstico (si algo no carga)</summary>
+    <pre id="diaglog" style="white-space:pre-wrap;overflow-wrap:anywhere;font:0.75rem/1.5 var(--mono);color:var(--muted);margin:8px 0 4px"></pre>
+  </details>
+
+  <div class="meta">
+    <div><strong id="name">Texto de ejemplo</strong> <span id="status" role="status"></span></div>
+  </div>
+
+  <section class="ocr" id="ocr" hidden aria-live="polite">
+    <strong id="ocrmsg"></strong>
+    <div class="ocr-row">
+      <label>Idioma del texto
+        <select id="ocrlang" aria-label="Idioma del texto a reconocer">
+          <option value="spa">Español</option>
+          <option value="eng">English</option>
+          <option value="fra">Français</option>
+          <option value="por">Português</option>
+          <option value="deu">Deutsch</option>
+          <option value="ita">Italiano</option>
+        </select>
+      </label>
+      <button class="btn" id="ocrgo" type="button">Reconocer texto (OCR)</button>
+      <button class="btn ghost" id="ocrcancel" type="button" hidden>Cancelar</button>
+    </div>
+    <progress id="ocrbar" max="100" value="0" hidden></progress>
+    <small>El motor y los idiomas están en la carpeta vendor, así que funciona sin conexión. Las páginas se procesan en tu navegador. El resultado puede tener errores.</small>
+  </section>
+
+  <article class="doc" id="doc"></article>
+</div>
+
+<footer class="player">
+  <div class="pin">
+    <div class="prog">
+      <input type="range" id="seek" min="0" max="0" value="0" step="1" aria-label="Progreso de lectura">
+      <span id="count">0 / 0</span>
+      <span id="remain"></span>
+    </div>
+    <div class="ctl">
+      <div class="transport">
+        <button class="ic" id="prev" type="button" aria-label="Frase anterior"><svg viewBox="0 0 24 24"><path d="M7 5h2v14H7zM20 5v14L10 12z"/></svg></button>
+        <button class="ic play" id="play" type="button" aria-label="Reproducir"></button>
+        <button class="ic" id="next" type="button" aria-label="Frase siguiente"><svg viewBox="0 0 24 24"><path d="M15 5h2v14h-2zM4 5v14l10-7z"/></svg></button>
+      </div>
+      <div class="opts">
+        <div class="pager" id="pager" role="group" aria-label="Páginas" hidden>
+          <button type="button" id="pprev" aria-label="Página anterior"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <input type="number" id="pnum" min="1" value="1" inputmode="numeric" aria-label="Número de página">
+          <span id="ptotal"></span>
+          <button type="button" id="pnext" aria-label="Página siguiente"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+        <div class="speeds" id="speeds" role="group" aria-label="Velocidad">
+          <button type="button" data-r="0.8" aria-pressed="false">0.8×</button>
+          <button type="button" data-r="1" aria-pressed="true">1×</button>
+          <button type="button" data-r="1.25" aria-pressed="false">1.25×</button>
+          <button type="button" data-r="1.5" aria-pressed="false">1.5×</button>
+          <button type="button" data-r="2" aria-pressed="false">2×</button>
+        </div>
+        <select id="voice" aria-label="Voz"></select>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="vendor/pdfjs/pdf.min.js"></script>
+<script src="vendor/tesseract/tesseract.min.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
