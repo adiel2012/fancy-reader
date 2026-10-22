@@ -17,14 +17,17 @@
     <span class="btn filebtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
       Abrir archivo
-    <input type="file" id="file2" class="ovl" aria-label="Abrir archivo PDF, Markdown o texto">
+    <input type="file" id="file2" class="ovl" multiple aria-label="Abrir archivo PDF, Markdown o texto, con sus imágenes">
+    </span>
+    <span class="btn ghost filebtn" title="Elige una carpeta con el .md y sus imágenes">Carpeta
+      <input type="file" id="folder" class="ovl" webkitdirectory multiple aria-label="Abrir una carpeta con documentos e imágenes">
     </span>
   </header>
 
   <label class="drop" id="drop" for="file">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
-    <span><b>Suelta aquí un PDF, Markdown o texto, o elige un archivo</b><small>Acepta .pdf, .md y .txt. Se procesa en tu navegador y no se sube a ningún servidor.</small></span>
-    <input type="file" id="file" class="ovl" aria-label="Elegir archivo PDF, Markdown o texto">
+    <span><b>Suelta aquí un PDF, Markdown o texto, o elige un archivo</b><small>Acepta .pdf, .md y .txt. Para un .md con imágenes, elige el .md junto con las imágenes, o usa el botón Carpeta. Todo se procesa en tu navegador.</small></span>
+    <input type="file" id="file" class="ovl" multiple aria-label="Elegir archivo PDF, Markdown o texto, con sus imágenes">
   </label>
 
   <details class="paste" id="paste">
@@ -42,7 +45,7 @@
   </details>
 
   <div class="meta">
-    <div><strong id="name">Texto de ejemplo</strong> <span id="status" role="status"></span></div>
+    <div><select id="docpick" hidden aria-label="Documento de la carpeta"></select> <strong id="name">Texto de ejemplo</strong> <span id="status" role="status"></span></div>
   </div>
 
   <section class="ocr" id="ocr" hidden aria-live="polite">
