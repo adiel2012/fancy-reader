@@ -88,7 +88,7 @@
   }
 
   /* ---------- Render ---------- */
-  var imageMap = {}, imgMiss = 0;
+  var imageMap = {}, imgMiss = 0, docBase = null;
   function normKey(s) {
     try { s = decodeURIComponent(String(s)); } catch (e) { s = String(s); }
     return s.replace(/\\/g, '/').replace(/[?#].*$/, '').replace(/^(\.{1,2}\/)+/, '').replace(/^\/+/, '').toLowerCase();
@@ -97,7 +97,10 @@
     if (!src) return null;
     if (/^(https?:|data:|blob:)/i.test(src)) return src;
     var k = normKey(src);
-    return imageMap[k] || imageMap[k.split('/').pop()] || null;
+    var local = imageMap[k] || imageMap[k.split('/').pop()];
+    if (local) return local;
+    if (docBase) { try { return new URL(src, docBase).href; } catch (e) {} }
+    return null;
   }
   function isImageFile(f) { return /^image\//i.test(f.type) || /\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i.test(f.name); }
   function addImages(files) {
@@ -411,8 +414,9 @@
       setStatus('No pude leer ese archivo' + (e && e.message ? ' (' + e.message + ')' : '') + '.', true);
     }
   }
-  async function openRaw(raw, fname, key, isMd) {
+  async function openRaw(raw, fname, key, isMd, base) {
     stop(); cancelOcr();
+    docBase = base || null;
     try {
       if (raw.indexOf('\u0000') > -1) { setStatus('Ese archivo no parece de texto.', true); return; }
       var base = fname.replace(/\.[^.]+$/, '');
@@ -431,6 +435,43 @@
       window.scrollTo({ top: 0 });
     } catch (e) {
       setStatus('No pude leer ese texto' + (e && e.message ? ' (' + e.message + ')' : '') + '.', true);
+    }
+  }
+
+  function toRawUrl(u) {
+    u = String(u).trim();
+    var m = u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+?)(?:[?#].*)?$/i);
+    if (m) return 'https://raw.githubusercontent.com/' + m[1] + '/' + m[2] + '/' + m[3];
+    m = u.match(/^https?:\/\/gist\.github\.com\/([^/]+)\/([0-9a-f]+)\/?(?:[?#].*)?$/i);
+    if (m) return 'https://gist.githubusercontent.com/' + m[1] + '/' + m[2] + '/raw';
+    return u.replace(/#.*$/, '');
+  }
+  async function openUrl(input) {
+    var raw = toRawUrl(input);
+    if (!/^https?:\/\//i.test(raw)) { setStatus('Escribe una dirección que empiece por https://', true); return; }
+    if (/^https?:\/\/github\.com\/[^/]+\/[^/]+\/?(tree\/.*)?$/i.test(raw)) { setStatus('Esa dirección es una carpeta o repositorio. Abre un archivo .md concreto.', true); return; }
+    stop(); cancelOcr();
+    setStatus('descargando…'); diag('descarga: ' + raw);
+    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 40000);
+    try {
+      var r = await fetch(raw, { signal: ctl.signal, credentials: 'omit' });
+      if (!r.ok) throw new Error('HTTP ' + r.status + (r.status === 404 ? ': no existe o el repositorio es privado' : ''));
+      var name = 'documento';
+      try { name = decodeURIComponent(raw.split(/[?#]/)[0].split('/').pop() || name); } catch (e) {}
+      lsSet('vozalta:lasturl', String(input).trim());
+      if (/\.pdf$/i.test(name) || /pdf/i.test(r.headers.get('content-type') || '')) {
+        var blob = await r.blob(); clearTimeout(timer);
+        return openFile(new File([blob], name, { type: 'application/pdf' }));
+      }
+      var txt = await r.text(); clearTimeout(timer);
+      diag('descargado: ' + name + ' (' + txt.length + ' caracteres)');
+      var isMd = !/\.(txt|text)$/i.test(name);
+      return openRaw(txt, name, 'vozalta:pos:url:' + raw, isMd, raw.slice(0, raw.lastIndexOf('/') + 1));
+    } catch (e) {
+      clearTimeout(timer);
+      var msg = e && e.name === 'AbortError' ? 'tardó demasiado' : (e && /^HTTP/.test(e.message) ? e.message : 'no pude descargarlo. Revisa la dirección y tu conexión. Si abres esta página dentro de Claude, ese entorno bloquea las descargas externas: usa la versión de GitHub Pages o la carpeta local');
+      diag('descarga falló: ' + (e && e.message));
+      setStatus('No se pudo abrir el enlace: ' + msg + '.', true);
     }
   }
 
@@ -558,6 +599,7 @@
     if (imgs.length) { setStatus('imágenes recibidas. Ahora abre el .md que las usa.'); return; }
     setStatus('No encontré archivos para abrir.', true);
   }
+  $('#urlform').addEventListener('submit', function (e) { e.preventDefault(); var v = $('#urlin').value.trim(); if (v) openUrl(v); else setStatus('Pega primero una dirección.', true); });
   $('#docpick').addEventListener('change', function () { var f = docFiles[parseInt(this.value, 10)]; if (f) { setStatus('abriendo ' + f.name + '…'); openFile(f); } });
   function onPick(e) {
     var inp = e.target, list = inp.files ? Array.prototype.slice.call(inp.files) : [], f = list[0];
@@ -654,4 +696,10 @@
   setPlaying(false);
   renderDoc(SAMPLE, false);
   setStatus('ejemplo, abre un PDF para escuchar el tuyo');
+  try {
+    var qs = new URLSearchParams(location.search), q = qs.get('md') || qs.get('url');
+    var last = lsGet('vozalta:lasturl');
+    if (last) $('#urlin').value = last;
+    if (q) { $('#urlin').value = q; openUrl(q); }
+  } catch (e) {}
 })();

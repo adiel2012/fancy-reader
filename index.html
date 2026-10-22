@@ -30,6 +30,14 @@
     <input type="file" id="file" class="ovl" multiple aria-label="Elegir archivo PDF, Markdown o texto, con sus imágenes">
   </label>
 
+  <form class="urlrow" id="urlform" autocomplete="off">
+    <label for="urlin">O abre un archivo desde internet (GitHub u otra dirección)</label>
+    <div class="row">
+      <input type="url" id="urlin" inputmode="url" placeholder="https://github.com/usuario/repositorio/blob/main/archivo.md">
+      <button class="btn" id="urlgo" type="submit">Abrir enlace</button>
+    </div>
+  </form>
+
   <details class="paste" id="paste">
     <summary>O pega texto o Markdown aquí</summary>
     <textarea id="pastetxt" placeholder="Pega aquí el texto que quieres escuchar" aria-label="Texto a leer"></textarea>
